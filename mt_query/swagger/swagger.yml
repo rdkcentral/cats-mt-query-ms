@@ -1,0 +1,430 @@
+# Copyright 2024 Comcast Cable Communications Management, LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+
+openapi: "3.0.0"
+info:
+  description: A microservice for querying Mikrotik router health information.
+  version: "1.0.0"
+  title: mt-query-ms
+
+
+servers:
+  - url: /api
+
+paths:
+# Aggregation calls
+
+
+  /v2/router:
+    get:
+      operationId: router.endpoints.get_aggregate
+      tags:
+        - v2
+      summary: Fetch all health information on a router
+      description: Aggregates all of the health router calls and returns a json object of this routers health information.
+      parameters:
+        - $ref: '#/components/parameters/host'
+        - $ref: '#/components/parameters/showDefault'
+        - $ref: '#/components/parameters/showDisabled'
+
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/aggregate'
+          description: OK
+
+
+  /v2/router/identity:
+    get:
+      operationId: router.endpoints.get_identity
+      tags:
+        - v2
+      summary: Fetch system identity
+      description: Accepts a hostname and returns the router's identity
+      parameters:
+        - $ref: '#/components/parameters/host'
+
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/identity'
+          description: OK
+
+  /v2/router/capability:
+    get:
+      operationId: router.endpoints.get_capability
+      summary: Fetch leases for router capabilities.
+      description: Accepts a hostname and returns an object containing leases mapped to capabilities.
+      tags:
+        - v2
+      parameters:
+        - $ref: '#/components/parameters/host'
+        - $ref: '#/components/parameters/showDefault'
+        - $ref: '#/components/parameters/showDisabled'
+      responses:
+        '201':
+          description: Ok
+          content:
+            application/json:
+             schema:
+              $ref: '#/components/schemas/capability_v2'
+
+
+  /v2/router/leases:
+    get:
+      operationId: router.endpoints.get_leases
+      summary: Fetch all DHCP leases from router.
+      description: Accepts a hostname and returns an array of all DHCP leases on the router.
+      tags:
+        - v2
+      parameters:
+        - $ref: '#/components/parameters/host'
+      responses:
+        '201':
+          description: Ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/lease_array'
+  /v2/router/firmware:
+    get:
+      operationId: router.endpoints.get_firmware
+      summary: Fetch firmware information from router
+      description: Accepts a hostname and returns an onbject containing firmware information.
+      tags:
+        - v2
+      parameters:
+        - $ref: '#/components/parameters/host'
+      responses:
+        '201':
+          description: Ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/firmware'
+
+
+  /v2/router/netwatch:
+    get:
+      operationId: router.endpoints.get_netwatch
+      summary: Fetch netwatch list from router.
+      description: Accepts a hostname and returns an array containing the netwatch list from the router.
+      tags:
+        - v2
+      parameters:
+        - $ref: '#/components/parameters/host'
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/netwatch'
+          description: OK
+
+  /router:
+    post:
+      tags:
+        - v1
+      operationId: router.endpoints.get_aggregate_v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/capability'
+      responses:
+        '201':
+          description: Ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/aggregate'
+
+  /router/capability:
+    post:
+      tags:
+        - v1
+      operationId: router.endpoints.get_capability_v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/capability'
+      responses:
+        '201':
+          description: Ok
+          content:
+            application/json:
+             schema:
+              $ref: '#/components/schemas/capability_v2'
+
+
+  /v3/router/:
+    get:
+      tags:
+        - v3
+      operationId: router.endpoints.get_aggregate_v3
+      parameters:
+        - $ref: '#/components/parameters/host'
+        - $ref: '#/components/parameters/showDefault'
+        - $ref: '#/components/parameters/showDisabled'
+      responses:
+        '201':
+          description: Ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/aggregate'
+  /v3/backup:
+    post:
+      tags:
+        - v3
+      operationId: router.endpoints.post_config_backup
+      responses:
+        '200':
+          description: Ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    type: string
+            
+    get:
+      tags:
+        - v3
+      operationId: router.endpoints.get_config_backup
+      responses:
+        '200':
+          description: Ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/config_info'
+
+
+components:
+  schemas:
+
+    identity:
+      type: object
+      description: The router's name.
+      properties:
+        name:
+          type: string
+          example: example_router_name
+
+    netwatch:
+      type: array
+      description: All of the netwatch entries on the router.
+      items:
+        type: object
+        description: An individual netwatch entry for a given lease.
+        properties:
+          since:
+            description: Length of time since status change.
+            type: string
+            example: "aug/02/2019 18:18:11"
+          status:
+            description: Current status.
+            type: string
+            example: "up"
+          comment:
+            description: Configuration comment.
+            type: string
+            example: "system - TRS01"
+          address:
+            description: Lease IP address.
+            type: string
+            example: "192.168.100.61"
+
+    lease_array:
+      type: array
+      description: An array containing all of the leases on a router.
+      items:
+        $ref: '#/components/schemas/dhcp_lease'
+    firmware:
+      type: object
+      description: Firmware health status and meta information.
+      properties:
+        isHealthy:
+          type: boolean
+          description: Health status of the firmware. Returns false if the firmware is less than 6.44.5
+        metaData:
+          $ref: '#/components/schemas/firmware_meta'
+    firmware_meta:
+      type: object
+      description: Firmware version information and health of firmware for a router.
+      properties:
+        currentFirmware:
+          type: string
+        upgradeFirmware:
+          type: string
+        model:
+          type: string
+    dhcp_lease:
+      type: object
+      description: An individual DHCP lease.
+      properties:
+        comment:
+          description: Configuration comment.
+          type: string
+          example: "TRS01"
+        address:
+          description: Lease IP address.
+          type: string
+          example: "192.168.100.6"
+        isHealthy:
+          description: Health state of the lease. False if lease is unbound.
+          type: boolean
+          example: true
+        macAddress:
+          description: Mac address of the lease device.
+          type: string
+          example: "93:FB:E5:3D:0E:BF"
+        status:
+          description: Current status of lease.
+          type: string
+          example: "bound"
+        disabled:
+          description: True if the lease has been disabled via configuration.
+          type: boolean
+          example: false
+
+    capability_v2:
+      type: object
+      description: A capability item, contianing a health status and lease metadata. Empty object if no applicable leases found.
+      properties:
+        isHealthy:
+          description: Health status of the capability. False if one or more child leases is not healthy.
+          type: boolean
+          example: true
+        metadata:
+          description: Detailed list of checked leases for a given capability
+          type: array
+          items:
+            $ref: '#/components/schemas/dhcp_lease'
+
+
+    aggregate:
+      type: object
+      description: Every avaiable health attribute on the router.
+      properties:
+        identity:
+          $ref: '#/components/schemas/identity'
+        capability:
+          $ref: '#/components/schemas/capability_v2'
+        leases:
+          $ref: '#/components/schemas/lease_array'
+        netwatch:
+          $ref: '#/components/schemas/netwatch'
+        firmware:
+          $ref: '#/components/schemas/firmware'
+
+
+    # Legacy capability entry schema
+    capability:
+      type: object
+      properties:
+        host:
+          type: string
+          example: 0.0.0.0.0
+        capabilities:
+          type: array
+          uniqueItems: true
+          minItems: 0
+          maxItems: 15
+          example: ["IRR", "TCE", "PWR"]
+          items:
+            type: string
+            enum:
+              - IRR
+              - PWR
+              - TCE
+              - VID
+              - SRV
+        showDefault:
+          type: boolean
+          default: false
+        showDisabled:
+          type: boolean
+          default: false
+
+    config_info:
+      type: object
+      properties:
+        backup_interval:
+          type: integer
+        backups:
+          type: array
+          uniqueItems: True
+          minItems: 1
+          maxItems: 20
+          items: 
+            type: object
+            properties:
+              last_modified:
+                type: string
+              name:
+                type: string
+              size:
+                type: integer
+        jobs: 
+          type: array
+          uniqueItems: True
+          minItems: 1
+          maxItems: 20
+          items: 
+            type: object
+            properties:
+              id:
+                type: string
+              name: 
+                type: string
+              next_run:
+                type: string
+        
+          
+  parameters:
+      host:
+        name: host
+        in: query
+        description: Hostname of the router to retrieve information from
+        schema:
+          type: string
+          nullable: true
+          default: null
+      showDisabled:
+        name: showDisabled
+        in: query
+        description: Allow disabled leases.
+        schema:
+          type: boolean
+          nullable: true
+          default: false
+      showDefault:
+        name: showDefault
+        in: query
+        description: Allow leases with default mac addresses
+        schema:
+          type: boolean
+          nullable: true
+          default: false
