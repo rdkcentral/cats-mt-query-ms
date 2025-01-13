@@ -22,7 +22,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="mt-query-ms",
-    version="24.10.2",
+    version="1.0.0",
     author="CATS",
     description="Microservice for querying router health",
     packages=setuptools.find_packages(),
